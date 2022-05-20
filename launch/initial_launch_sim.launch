@@ -1,0 +1,70 @@
+<launch>
+<!-- Arguments -->
+	<!-- Gazebo stuff -->
+		<arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+		<arg name="x_pos" default="0.6"/>
+		<arg name="y_pos" default="0.6"/>
+		<arg name="z_pos" default="0.05"/>
+		<arg name="maze"  default="maze3" />
+	<!-- Rviz stuff -->
+		<arg name="scan_topic"     default="scan"/>
+		<arg name="initial_pose_x" default="0.0"/>
+		<arg name="initial_pose_y" default="0.0"/>
+		<arg name="initial_pose_a" default="0.0"/>
+	<!-- Gmapping -->
+		<arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
+		<arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+		<arg name="set_base_frame" default="base_footprint"/>
+		<arg name="set_odom_frame" default="odom"/>
+		<arg name="set_map_frame"  default="map"/>
+
+<!-- TF -->
+	<!--<node pkg="tf" type="static_transform_publisher" name="camera_tf" args="-1.95 -0.55 2.0 -1.58 0 -1.58 /odom /camera_link 100"/>-->
+	<node pkg="tf" type="static_transform_publisher" name="camera_tf" args="0 0 0 0 0 0 /odom /camera_link 100"/>
+
+<!-- TurtleBot and Gazibo -->
+    <env name="GAZEBO_MODEL_PATH" value="$(find rbe3002_final)/models:$(optenv GAZEBO_MODEL_PATH"/>
+    <include file="$(find rbe3002-turtlebot)/launch/turtlebot3002_world.launch">
+        <arg name="world_name" value="$(find rbe3002_final)/worlds/final_maze.world"/>
+        <arg name="x_pos" value="-2.2"/>
+        <arg name="y_pos" value="0.4"/>
+        <arg name="z_pos" value="0.05"/>
+		<param name="output" value="log"/>
+	</include>
+
+<!-- RVIZ LAUNCH -->
+	<node name="rviz" pkg="rviz" type="rviz" respawn="true" args="-d $(find rbe_3002_final)/rviz/final_rbe.rviz"/>
+
+<!-- Gmapping -->
+	<node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping" output="log">
+		<param name="base_frame" value="$(arg set_base_frame)"/>
+		<param name="odom_frame" value="$(arg set_odom_frame)"/>
+		<param name="map_frame"  value="$(arg set_map_frame)"/>
+		<rosparam command="load" file="$(find rbe_3002_final)/config/gmapping_params.yaml" />
+	</node>
+
+<!-- TurtleBot3 -->
+	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+		<arg name="model" value="$(arg model)" />
+	</include>
+
+	
+
+  
+<!-- Robot control node -->
+	<node pkg="rbe_3002_final" type="lab2.py" name="lab2" output="screen"/> 
+
+<!-- Path Controller node -->
+	<node name="path_controller" pkg="rbe_3002_final" type="path_controller.py" output="log"/> 
+
+<!-- Path Controller node -->
+	<node name="fronteir_explorer" pkg="rbe_3002_final" type="fronteir_explorer.py" output="log"/> 
+
+<!-- Path Planner node -->
+	<node name="path_planner" pkg="rbe_3002_final" type="path_planner.py" output="screen"/>
+
+<!-- Map converter node -->
+	<node name="map_conversion" pkg="rbe_3002_final" type="map_conversion.py" output="log"/>
+
+</launch>
+
